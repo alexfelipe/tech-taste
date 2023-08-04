@@ -1,5 +1,6 @@
 package br.com.alura.techtaste.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,27 +36,30 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.alura.techtaste.R
 import br.com.alura.techtaste.models.Meal
 import br.com.alura.techtaste.ui.theme.Cinza1
 import br.com.alura.techtaste.ui.theme.Cinza3
 import br.com.alura.techtaste.ui.theme.LaranjaMedio
 import br.com.alura.techtaste.ui.theme.TechTasteTheme
 import coil.compose.AsyncImage
+import org.jetbrains.annotations.Async
 import java.math.BigDecimal
 import java.math.MathContext
 import kotlin.random.Random
 
 val categories = mapOf(
-    Icons.Filled.Person to "Petiscos",
-    Icons.Filled.Build to "Principais",
-    Icons.Filled.Add to "Massas",
-    Icons.Filled.AccountBox to "Sobremesa",
-    Icons.Filled.CheckCircle to "Bebidas",
+    R.drawable.petiscos_category to "Petiscos",
+    R.drawable.principais_category to "Principais",
+    R.drawable.massas_category to "Massas",
+    R.drawable.sobremesas_category to "Sobremesa",
+    R.drawable.bebidas_category to "Bebidas",
 )
 
 val meals = List(10) {
@@ -69,12 +74,34 @@ val meals = List(10) {
 private const val TAG = "HomeScreen"
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(modifier: Modifier = Modifier) {
     Column(
-        Modifier
+        modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
+        AsyncImage(
+            R.drawable.main_banner,
+            contentDescription = "banner principal",
+            Modifier
+                .fillMaxWidth(),
+            contentScale = ContentScale.Crop,
+            placeholder = ColorPainter(Color.Gray)
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            AsyncImage(
+                R.drawable.logo_home,
+                contentDescription = "logo do início",
+                Modifier
+                    .align(
+                        Alignment.Center
+                    )
+                    .width(150.dp)
+                    .padding(vertical = 24.dp),
+                contentScale = ContentScale.Crop,
+                placeholder = ColorPainter(Color.Gray)
+            )
+        }
         CategoriesSection()
         MealSection(title = {
             Text(
@@ -233,7 +260,7 @@ private fun CategoriesSection() {
         contentPadding = PaddingValues(24.dp),
         horizontalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        categories.forEach { (icon, label) ->
+        categories.forEach { (image, label) ->
             item {
                 Box(
                     Modifier
@@ -248,7 +275,11 @@ private fun CategoriesSection() {
                         Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(imageVector = icon, contentDescription = null)
+                        AsyncImage(
+                            image,
+                            contentDescription = "imagem da categoria",
+                            Modifier.size(60.dp)
+                        )
                         Text(text = label)
                     }
                 }
