@@ -1,6 +1,5 @@
 package br.com.alura.techtaste.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,17 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
@@ -49,17 +41,16 @@ import br.com.alura.techtaste.ui.theme.Cinza3
 import br.com.alura.techtaste.ui.theme.LaranjaMedio
 import br.com.alura.techtaste.ui.theme.TechTasteTheme
 import coil.compose.AsyncImage
-import org.jetbrains.annotations.Async
 import java.math.BigDecimal
 import java.math.MathContext
 import kotlin.random.Random
 
 val categories = mapOf(
-    R.drawable.petiscos_category to "Petiscos",
-    R.drawable.principais_category to "Principais",
-    R.drawable.massas_category to "Massas",
-    R.drawable.sobremesas_category to "Sobremesa",
-    R.drawable.bebidas_category to "Bebidas",
+    R.drawable.petiscos to "Petiscos",
+    R.drawable.principais to "Principais",
+    R.drawable.massas to "Massas",
+    R.drawable.sobremesas to "Sobremesas",
+    R.drawable.bebidas to "Bebidas",
 )
 
 val meals = List(10) {
@@ -81,7 +72,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             .verticalScroll(rememberScrollState())
     ) {
         AsyncImage(
-            R.drawable.main_banner,
+            R.drawable.app_banner,
             contentDescription = "banner principal",
             Modifier
                 .fillMaxWidth(),
@@ -90,7 +81,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         )
         Box(modifier = Modifier.fillMaxWidth()) {
             AsyncImage(
-                R.drawable.logo_home,
+                R.drawable.app_logo,
                 contentDescription = "logo do início",
                 Modifier
                     .align(
@@ -102,7 +93,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 placeholder = ColorPainter(Color.Gray)
             )
         }
-        CategoriesSection()
+        CategoriesSection(categories)
         MealSection(title = {
             Text(
                 text = "Mais populares",
@@ -248,7 +239,7 @@ fun MealSection(
 }
 
 @Composable
-private fun CategoriesSection() {
+private fun CategoriesSection(categories: Map<Int, String>) {
     Text(
         text = "Escolha por categoria",
         Modifier.padding(horizontal = 24.dp),
@@ -263,13 +254,17 @@ private fun CategoriesSection() {
         categories.forEach { (image, label) ->
             item {
                 Box(
-                    Modifier
+                    modifier = Modifier
                         .background(
                             Cinza1,
                             shape = RoundedCornerShape(8.dp)
                         )
                         .padding(8.dp)
-                        .size(88.dp),
+                        .height(88.dp)
+                        .widthIn(
+                            min = 88.dp,
+                            max = 100.dp
+                        ),
                 ) {
                     Column(
                         Modifier.align(Alignment.Center),
@@ -278,7 +273,7 @@ private fun CategoriesSection() {
                         AsyncImage(
                             image,
                             contentDescription = "imagem da categoria",
-                            Modifier.size(60.dp)
+                            Modifier.size(48.dp)
                         )
                         Text(text = label)
                     }

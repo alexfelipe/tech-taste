@@ -53,7 +53,15 @@ dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2023.06.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
+    val navVersion = "2.6.0"
 
+    // libraries for openAi client
+    implementation(platform("com.aallam.openai:openai-client-bom:3.3.0"))
+    implementation("com.aallam.openai:openai-client")
+    runtimeOnly("io.ktor:ktor-client-okhttp")
+    implementation("org.slf4j:slf4j-api:2.0.7")
+
+    implementation("androidx.navigation:navigation-compose:$navVersion")
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
