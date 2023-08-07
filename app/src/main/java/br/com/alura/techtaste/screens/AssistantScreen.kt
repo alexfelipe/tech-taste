@@ -2,11 +2,13 @@ package br.com.alura.techtaste.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -39,22 +42,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import br.com.alura.techtaste.R
 import br.com.alura.techtaste.models.Message
 import br.com.alura.techtaste.samples.sampleMessages
 import br.com.alura.techtaste.ui.theme.Cinza1
 import br.com.alura.techtaste.ui.theme.Cinza2
+import br.com.alura.techtaste.ui.theme.Cinza3
 import br.com.alura.techtaste.ui.theme.LaranjaClaro
 import br.com.alura.techtaste.ui.theme.LaranjaMedio
 import br.com.alura.techtaste.ui.theme.TechTasteTheme
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.math.RoundingMode
+import java.text.DecimalFormat
 import java.time.format.TextStyle
+import kotlin.random.Random
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -125,11 +137,91 @@ fun AssistantScreen(
                                     shape = RoundedCornerShape(10.dp)
                                 )
                         ) {
-                            Text(
-                                text = message.text,
-                                Modifier.padding(8.dp),
-                                color = LaranjaClaro
-                            )
+                            Column {
+                                Text(
+                                    text = message.text,
+                                    Modifier.padding(8.dp),
+                                    color = LaranjaClaro
+                                )
+                                if (message.refeicoes.isNotEmpty()) {
+                                    message.refeicoes.forEach { refeicao ->
+                                        Column(Modifier.padding(horizontal = 8.dp)) {
+                                            Row(
+                                                Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(
+                                                    Modifier.weight(1f),
+                                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    AsyncImage(
+                                                        "https://picsum.photos/${
+                                                            Random.nextInt(
+                                                                1280,
+                                                                1920
+                                                            )
+                                                        }/${
+                                                            Random.nextInt(
+                                                                720,
+                                                                1920
+                                                            )
+                                                        }", contentDescription = null,
+                                                        Modifier
+                                                            .size(80.dp, 70.dp)
+                                                            .background(
+                                                                Color.Gray,
+                                                                shape = RoundedCornerShape(20.dp)
+                                                            ).clip(shape = RoundedCornerShape(20.dp)),
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                    Text(
+                                                        text = refeicao.nome,
+                                                        color = LaranjaMedio,
+                                                        fontSize = 18.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                                Text(text = refeicao.preco.toString())
+                                            }
+                                            Spacer(
+                                                modifier = Modifier
+                                                    .padding(vertical = 8.dp)
+                                                    .height(1.dp)
+                                                    .fillMaxWidth()
+                                                    .background(Color.Gray.copy(alpha = 0.5f))
+                                            )
+                                        }
+
+                                    }
+                                    Row(
+                                        Modifier
+                                            .padding(8.dp)
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(text = "Total:")
+                                        val df = DecimalFormat("#.##")
+                                        df.roundingMode = RoundingMode.DOWN
+                                        val total = message.refeicoes.sumOf { it.preco }
+                                        Text(
+                                            text = df.format(total),
+                                            fontSize = 22.sp
+                                        )
+                                    }
+                                    Button(
+                                        onClick = { /*TODO*/ },
+                                        Modifier
+                                            .padding(8.dp)
+                                            .fillMaxWidth()
+
+                                    ) {
+                                        Text(text = "Pedir")
+                                    }
+                                }
+                            }
                         }
                     }
                 }

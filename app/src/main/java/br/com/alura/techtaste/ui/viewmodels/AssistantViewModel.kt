@@ -1,5 +1,6 @@
 package br.com.alura.techtaste.ui.viewmodels
 
+import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.lifecycle.ViewModel
 import br.com.alura.techtaste.models.Message
 import br.com.alura.techtaste.ui.states.AssistantUiState
@@ -14,6 +15,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlin.random.Random
 
 class AssistantViewModel : ViewModel() {
 
@@ -29,8 +33,43 @@ class AssistantViewModel : ViewModel() {
         openAI = OpenAI("")
     }
 
-    @OptIn(BetaOpenAI::class)
     suspend fun send(text: String) {
+
+        val jsonPattern = "\\{.*\\}".toRegex(RegexOption.DOT_MATCHES_ALL)
+        val generatedResponse = generateResponse()
+        val jsonMatch = jsonPattern.find(generatedResponse)
+        jsonMatch?.value?.let { rawJson ->
+            val json = Json { ignoreUnknownKeys = true }
+            val refeicoesList = json.decodeFromString<RefeicoesList>(rawJson)
+
+            val refeicoes = refeicoesList.refeicoes
+            _uiState.update { currentState ->
+                currentState.copy(
+                    messages = currentState.messages +
+                            Message(text, isAuthor = true) +
+                            Message(
+                                generatedResponse.substringBefore(rawJson),
+                                refeicoes = refeicoes,
+                                isAuthor = false
+                            )
+                )
+            }
+
+
+        }
+//        sendRequestToOpenAi(text)
+    }
+
+    private fun generateResponse(): String {
+        return """
+${LoremIpsum(Random.nextInt(10, 30)).values.first()}
+            
+$json
+""".trimIndent()
+    }
+
+    @OptIn(BetaOpenAI::class)
+    private suspend fun sendRequestToOpenAi(text: String) {
         openAI?.let { openAi ->
             val chatCompletion = openAi
                 .chatCompletion(request = createRequest(text))
@@ -63,31 +102,6 @@ class AssistantViewModel : ViewModel() {
                 }
             }
         }
-        _uiState.update { currentState ->
-            currentState.copy(
-                messages = currentState.messages
-            )
-        }
-    }
-
-    @OptIn(BetaOpenAI::class)
-    private suspend fun sendToOpenIA(
-        text: String,
-        onPhraseChange: (String) -> Unit,
-    ) {
-        var phrase = ""
-        val request = createRequest(text)
-        openAI?.let {
-            val chatCompletionChunk = it.chatCompletions(request)
-            chatCompletionChunk.collect { chatCompletionChunk ->
-                chatCompletionChunk.choices.forEach { chatChunk ->
-                    chatChunk.delta?.content?.let { text ->
-                        phrase += text
-                    }
-                    onPhraseChange(phrase)
-                }
-            }
-        }
     }
 
     @OptIn(BetaOpenAI::class)
@@ -105,8 +119,33 @@ class AssistantViewModel : ViewModel() {
         )
     }
 
-
 }
+
+val json = """
+{
+  "refeicoes": [
+    {
+      "nome": "Hambúrguer Clássico",
+      "descricao": "Um hambúrguer suculento com queijo, alface e molho especial.",
+      "preco": 12.99,
+      "calorias": 550
+    },
+    {
+      "nome": "Salada de Frango Grelhado",
+      "descricao": "Uma salada fresca com frango grelhado, vegetais mistos e molho de limão.",
+      "preco": 9.99,
+      "calorias": 320
+    },
+    {
+      "nome": "Massa Carbonara",
+      "descricao": "Massa cozida al dente com molho de creme de ovo, queijo parmesão e bacon crocante.",
+      "preco": 15.50,
+      "calorias": 720
+    }
+  ]
+}
+"""
+
 
 private val SYSTEM_MESSAGE = """
     Você vai ser um gerador de postagens para engajar a comunidade de tecnologia.
@@ -117,3 +156,14 @@ A linguagem deve ser descontraída e objetiva, focando em informar o máximo pos
 
 Você deve apenas responder com a postagem com base no texto de entrada.
 """.trimIndent()
+
+@Serializable
+data class Refeicao(
+    val nome: String,
+    val descricao: String,
+    val preco: Double,
+    val calorias: Int
+)
+
+@Serializable
+data class RefeicoesList(val refeicoes: List<Refeicao>)

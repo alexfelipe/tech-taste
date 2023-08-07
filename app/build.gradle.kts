@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 android {
@@ -61,6 +62,7 @@ dependencies {
     runtimeOnly("io.ktor:ktor-client-okhttp")
     implementation("org.slf4j:slf4j-api:2.0.7")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
     implementation("androidx.navigation:navigation-compose:$navVersion")
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("androidx.core:core-ktx:1.10.1")
