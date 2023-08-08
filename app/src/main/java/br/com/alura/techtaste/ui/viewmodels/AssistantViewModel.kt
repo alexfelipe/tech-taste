@@ -3,8 +3,8 @@ package br.com.alura.techtaste.ui.viewmodels
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.lifecycle.ViewModel
 import br.com.alura.techtaste.models.Message
+import br.com.alura.techtaste.models.MessageError
 import br.com.alura.techtaste.ui.states.AssistantUiState
-import br.com.alura.techtaste.ui.states.AssistanteError
 import com.aallam.openai.api.BetaOpenAI
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
@@ -34,30 +34,55 @@ class AssistantViewModel : ViewModel() {
     }
 
     suspend fun send(text: String) {
+        _uiState.update {
+            it.copy(
+                messages = it.messages +
+                        Message(text, isAuthor = true) +
+                        Message(
+                            "",
+                            isAuthor = false,
+                            isLoading = true
+                        )
+            )
+        }
+        delay(Random.nextLong(500, 1000))
+        sendMessage(text)
+//        sendRequestToOpenAi(text)
+    }
 
-        val jsonPattern = "\\{.*\\}".toRegex(RegexOption.DOT_MATCHES_ALL)
-        val generatedResponse = generateResponse()
-        val jsonMatch = jsonPattern.find(generatedResponse)
-        jsonMatch?.value?.let { rawJson ->
-            val json = Json { ignoreUnknownKeys = true }
-            val refeicoesList = json.decodeFromString<RefeicoesList>(rawJson)
-
-            val refeicoes = refeicoesList.refeicoes
+    private fun sendMessage(text: String) {
+        try {
+            if (text.isBlank()) {
+                throw Exception("falha")
+            }
+            val jsonPattern = "\\{.*\\}".toRegex(RegexOption.DOT_MATCHES_ALL)
+            val generatedResponse = generateResponse()
+            val jsonMatch = jsonPattern.find(generatedResponse)
+            jsonMatch?.value?.let { rawJson ->
+                val json = Json { ignoreUnknownKeys = true }
+                val refeicoes = json.decodeFromString<RefeicoesList>(rawJson).refeicoes
+                val message = generatedResponse.substringBefore(rawJson).trim()
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        messages = currentState.messages.dropLast(1) + Message(
+                            text = message,
+                            isAuthor = false,
+                            refeicoes = refeicoes
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            val lastMessage = _uiState.value.messages.last()
             _uiState.update { currentState ->
                 currentState.copy(
-                    messages = currentState.messages +
-                            Message(text, isAuthor = true) +
-                            Message(
-                                generatedResponse.substringBefore(rawJson),
-                                refeicoes = refeicoes,
-                                isAuthor = false
-                            )
+                    messages = currentState.messages.dropLast(1) + lastMessage.copy(
+                        isLoading = false,
+                        error = MessageError("falha ao carregar mensagem", e)
+                    )
                 )
             }
-
-
         }
-//        sendRequestToOpenAi(text)
     }
 
     private fun generateResponse(): String {
@@ -91,13 +116,6 @@ $json
                     currentState.copy(
                         messages = currentState.messages -
                                 currentState.messages.last(),
-                        error = AssistanteError("Falha ao gerar mensagem", e)
-                    )
-                }
-                delay(3000)
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        error = null
                     )
                 }
             }
@@ -117,6 +135,24 @@ $json
             model = ModelId(modelId),
             messages = chatMessages
         )
+    }
+
+    suspend fun retry() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                messages = currentState.messages.dropLast(1) +
+                        Message("", isLoading = true, isAuthor = false)
+            )
+        }
+        delay(Random.nextLong(500, 1000))
+        val lastMessage = _uiState.value.messages.last().text
+        sendMessage(lastMessage)
+    }
+
+    fun deleteLast() {
+        _uiState.update { currentState ->
+            currentState.copy(messages = _uiState.value.messages.dropLast(1))
+        }
     }
 
 }

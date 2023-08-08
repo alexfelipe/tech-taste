@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import br.com.alura.techtaste.samples.sampleMessages
 import br.com.alura.techtaste.screens.AssistantScreen
 import br.com.alura.techtaste.screens.HomeScreen
 import br.com.alura.techtaste.ui.viewmodels.AssistantViewModel
@@ -28,13 +27,23 @@ fun TechTasteNavHost(navController: NavHostController) {
             val uiState by viewModel.uiState.collectAsState()
             val scope = rememberCoroutineScope()
             AssistantScreen(
-                messages = uiState.messages,
+                uiState = uiState,
                 onCloseClick = {
                     navController.popBackStack()
                 },
                 onSendClick = { text ->
                     scope.launch {
                         viewModel.send(text)
+                    }
+                },
+                onRetryMessageClick = {
+                    scope.launch {
+                        viewModel.retry()
+                    }
+                },
+                onDeleteMessageClick = {
+                    scope.launch {
+                        viewModel.deleteLast()
                     }
                 }
             )

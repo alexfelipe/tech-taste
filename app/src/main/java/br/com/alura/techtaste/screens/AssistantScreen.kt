@@ -26,12 +26,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import br.com.alura.techtaste.R
 import br.com.alura.techtaste.models.Message
 import br.com.alura.techtaste.samples.sampleMessages
+import br.com.alura.techtaste.ui.states.AssistantUiState
 import br.com.alura.techtaste.ui.theme.Cinza1
 import br.com.alura.techtaste.ui.theme.Cinza2
 import br.com.alura.techtaste.ui.theme.Cinza3
@@ -71,11 +74,14 @@ import kotlin.random.Random
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AssistantScreen(
-    messages: List<Message>,
+    uiState: AssistantUiState,
     modifier: Modifier = Modifier,
     onCloseClick: () -> Unit,
-    onSendClick: (String) -> Unit
+    onSendClick: (String) -> Unit,
+    onRetryMessageClick: () -> Unit,
+    onDeleteMessageClick: () -> Unit
 ) {
+    val messages = uiState.messages
     var text by remember {
         mutableStateOf("")
     }
@@ -137,88 +143,135 @@ fun AssistantScreen(
                                     shape = RoundedCornerShape(10.dp)
                                 )
                         ) {
-                            Column {
-                                Text(
-                                    text = message.text,
-                                    Modifier.padding(8.dp),
-                                    color = LaranjaClaro
-                                )
-                                if (message.refeicoes.isNotEmpty()) {
-                                    message.refeicoes.forEach { refeicao ->
-                                        Column(Modifier.padding(horizontal = 8.dp)) {
-                                            Row(
-                                                Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Row(
-                                                    Modifier.weight(1f),
-                                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    AsyncImage(
-                                                        "https://picsum.photos/${
-                                                            Random.nextInt(
-                                                                1280,
-                                                                1920
+                            when {
+                                message.error != null -> {
+                                    Column {
+                                        Text(
+                                            text = message.error.message,
+                                            Modifier.padding(8.dp),
+                                            color = LaranjaClaro
+                                        )
+                                        Button(
+                                            onClick = { onRetryMessageClick() },
+                                            Modifier
+                                                .padding(horizontal = 8.dp)
+                                                .fillMaxWidth()
+                                        ) {
+                                            Text(text = "Tentar novamente", color = Cinza1)
+                                        }
+                                        TextButton(
+                                            onClick = { onDeleteMessageClick() },
+                                            Modifier
+                                                .padding(horizontal = 8.dp)
+                                                .fillMaxWidth()
+                                        ) {
+                                            Text(text = "Apagar")
+                                        }
+                                    }
+                                }
+
+                                message.isLoading -> {
+                                    CircularProgressIndicator(
+                                        Modifier
+                                            .padding(8.dp)
+                                            .align(Alignment.Center)
+                                    )
+                                }
+
+                                else -> {
+                                    Column {
+                                        Text(
+                                            text = message.text,
+                                            Modifier.padding(8.dp),
+                                            color = LaranjaClaro
+                                        )
+                                        if (message.refeicoes.isNotEmpty()) {
+                                            message.refeicoes.forEach { refeicao ->
+                                                Column(Modifier.padding(horizontal = 8.dp)) {
+                                                    Row(
+                                                        Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Row(
+                                                            Modifier.weight(1f),
+                                                            horizontalArrangement = Arrangement.spacedBy(
+                                                                16.dp
+                                                            ),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            AsyncImage(
+                                                                "https://picsum.photos/${
+                                                                    Random.nextInt(
+                                                                        1280,
+                                                                        1920
+                                                                    )
+                                                                }/${
+                                                                    Random.nextInt(
+                                                                        720,
+                                                                        1920
+                                                                    )
+                                                                }", contentDescription = null,
+                                                                Modifier
+                                                                    .size(80.dp, 70.dp)
+                                                                    .background(
+                                                                        Color.Gray,
+                                                                        shape = RoundedCornerShape(
+                                                                            20.dp
+                                                                        )
+                                                                    )
+                                                                    .clip(
+                                                                        shape = RoundedCornerShape(
+                                                                            20.dp
+                                                                        )
+                                                                    ),
+                                                                contentScale = ContentScale.Crop
                                                             )
-                                                        }/${
-                                                            Random.nextInt(
-                                                                720,
-                                                                1920
+                                                            Text(
+                                                                text = refeicao.nome,
+                                                                color = LaranjaMedio,
+                                                                fontSize = 18.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                overflow = TextOverflow.Ellipsis
                                                             )
-                                                        }", contentDescription = null,
-                                                        Modifier
-                                                            .size(80.dp, 70.dp)
-                                                            .background(
-                                                                Color.Gray,
-                                                                shape = RoundedCornerShape(20.dp)
-                                                            ).clip(shape = RoundedCornerShape(20.dp)),
-                                                        contentScale = ContentScale.Crop
-                                                    )
-                                                    Text(
-                                                        text = refeicao.nome,
-                                                        color = LaranjaMedio,
-                                                        fontSize = 18.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        overflow = TextOverflow.Ellipsis
+                                                        }
+                                                        Text(text = refeicao.preco.toString())
+                                                    }
+                                                    Spacer(
+                                                        modifier = Modifier
+                                                            .padding(vertical = 8.dp)
+                                                            .height(1.dp)
+                                                            .fillMaxWidth()
+                                                            .background(Color.Gray.copy(alpha = 0.5f))
                                                     )
                                                 }
-                                                Text(text = refeicao.preco.toString())
+
                                             }
-                                            Spacer(
-                                                modifier = Modifier
-                                                    .padding(vertical = 8.dp)
-                                                    .height(1.dp)
+                                            Row(
+                                                Modifier
+                                                    .padding(8.dp)
+                                                    .fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(text = "Total:")
+                                                val df = DecimalFormat("#.##")
+                                                df.roundingMode = RoundingMode.DOWN
+                                                val total = message.refeicoes.sumOf { it.preco }
+                                                Text(
+                                                    text = df.format(total),
+                                                    fontSize = 22.sp
+                                                )
+                                            }
+                                            Button(
+                                                onClick = { /*TODO*/ },
+                                                Modifier
+                                                    .padding(8.dp)
                                                     .fillMaxWidth()
-                                                    .background(Color.Gray.copy(alpha = 0.5f))
-                                            )
+
+                                            ) {
+                                                Text(text = "Pedir")
+                                            }
                                         }
-
-                                    }
-                                    Row(
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(text = "Total:")
-                                        val df = DecimalFormat("#.##")
-                                        df.roundingMode = RoundingMode.DOWN
-                                        val total = message.refeicoes.sumOf { it.preco }
-                                        Text(
-                                            text = df.format(total),
-                                            fontSize = 22.sp
-                                        )
-                                    }
-                                    Button(
-                                        onClick = { /*TODO*/ },
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxWidth()
-
-                                    ) {
-                                        Text(text = "Pedir")
                                     }
                                 }
                             }
@@ -298,11 +351,13 @@ fun AssistantScreenPreview() {
         ) {
             Box {
                 AssistantScreen(
-                    sampleMessages,
+                    AssistantUiState(sampleMessages),
                     onCloseClick = {
 
                     },
-                    onSendClick = {}
+                    onSendClick = {},
+                    onRetryMessageClick = {},
+                    onDeleteMessageClick = {}
                 )
             }
         }
