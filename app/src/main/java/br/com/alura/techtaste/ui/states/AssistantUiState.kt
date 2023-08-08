@@ -4,6 +4,5 @@ import br.com.alura.techtaste.models.Message
 
 data class AssistantUiState(
     val messages: List<Message> = emptyList(),
-    val isOpenOpenIaDialog: Boolean = false,
 )
 

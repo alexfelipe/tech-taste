@@ -1,7 +1,9 @@
 package br.com.alura.techtaste.ui.viewmodels
 
+import android.util.Log
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.lifecycle.ViewModel
+import br.com.alura.techtaste.dto.MealsDto
 import br.com.alura.techtaste.models.Message
 import br.com.alura.techtaste.models.MessageError
 import br.com.alura.techtaste.ui.states.AssistantUiState
@@ -15,9 +17,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
+
+private const val SYSTEM_MESSAGE = ""
 
 class AssistantViewModel : ViewModel() {
 
@@ -36,7 +39,7 @@ class AssistantViewModel : ViewModel() {
     suspend fun send(text: String) {
         _uiState.update {
             it.copy(
-                messages = it.messages +
+                messages = it.messages.filter { message -> message.error == null } +
                         Message(text, isAuthor = true) +
                         Message(
                             "",
@@ -60,19 +63,20 @@ class AssistantViewModel : ViewModel() {
             val jsonMatch = jsonPattern.find(generatedResponse)
             jsonMatch?.value?.let { rawJson ->
                 val json = Json { ignoreUnknownKeys = true }
-                val refeicoes = json.decodeFromString<RefeicoesList>(rawJson).refeicoes
+                val meals = json.decodeFromString<MealsDto>(rawJson).meals
                 val message = generatedResponse.substringBefore(rawJson).trim()
                 _uiState.update { currentState ->
                     currentState.copy(
                         messages = currentState.messages.dropLast(1) + Message(
                             text = message,
                             isAuthor = false,
-                            refeicoes = refeicoes
+                            meals = meals
                         )
                     )
                 }
             }
         } catch (e: Exception) {
+            Log.e("AssistantViewModel", "sendRequestToOpenAi: ", e)
             val lastMessage = _uiState.value.messages.last()
             _uiState.update { currentState ->
                 currentState.copy(
@@ -89,7 +93,7 @@ class AssistantViewModel : ViewModel() {
         return """
 ${LoremIpsum(Random.nextInt(10, 30)).values.first()}
             
-$json
+$JSON
 """.trimIndent()
     }
 
@@ -112,6 +116,7 @@ $json
                 }
 
             } catch (e: Exception) {
+                Log.e("AssistantViewModel", "sendRequestToOpenAi: ", e)
                 _uiState.update { currentState ->
                     currentState.copy(
                         messages = currentState.messages -
@@ -157,49 +162,30 @@ $json
 
 }
 
-val json = """
+private const val JSON = """
 {
-  "refeicoes": [
+  "meals": [
     {
-      "nome": "Hambúrguer Clássico",
-      "descricao": "Um hambúrguer suculento com queijo, alface e molho especial.",
-      "preco": 12.99,
-      "calorias": 550
+      "name": "Hambúrguer Clássico",
+      "description": "Um hambúrguer suculento com queijo, alface e molho especial.",
+      "price": "12.99",
+      "calories": 550
     },
     {
-      "nome": "Salada de Frango Grelhado",
-      "descricao": "Uma salada fresca com frango grelhado, vegetais mistos e molho de limão.",
-      "preco": 9.99,
-      "calorias": 320
+      "name": "Salada de Frango Grelhado",
+      "description": "Uma salada fresca com frango grelhado, vegetais mistos e molho de limão.",
+      "price": "9.99",
+      "calories": 320
     },
     {
-      "nome": "Massa Carbonara",
-      "descricao": "Massa cozida al dente com molho de creme de ovo, queijo parmesão e bacon crocante.",
-      "preco": 15.50,
-      "calorias": 720
+      "name": "Massa Carbonara",
+      "description": "Massa cozida al dente com molho de creme de ovo, queijo parmesão e bacon crocante.",
+      "price": "15.50",
+      "calories": 720
     }
   ]
 }
 """
 
 
-private val SYSTEM_MESSAGE = """
-    Você vai ser um gerador de postagens para engajar a comunidade de tecnologia.
 
-As postagens deve ter no máximo 255 caracteres e apenas a seguinte tag #AlexDev
-
-A linguagem deve ser descontraída e objetiva, focando em informar o máximo possível com menos palavras de maneira informal.
-
-Você deve apenas responder com a postagem com base no texto de entrada.
-""".trimIndent()
-
-@Serializable
-data class Refeicao(
-    val nome: String,
-    val descricao: String,
-    val preco: Double,
-    val calorias: Int
-)
-
-@Serializable
-data class RefeicoesList(val refeicoes: List<Refeicao>)

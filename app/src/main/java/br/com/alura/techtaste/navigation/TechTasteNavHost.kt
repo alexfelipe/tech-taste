@@ -8,21 +8,31 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import br.com.alura.techtaste.screens.AssistantScreen
-import br.com.alura.techtaste.screens.HomeScreen
+import br.com.alura.techtaste.samples.sampleCategories
+import br.com.alura.techtaste.samples.sampleMappedMeals
+import br.com.alura.techtaste.ui.screens.AssistantScreen
+import br.com.alura.techtaste.ui.screens.HomeScreen
 import br.com.alura.techtaste.ui.viewmodels.AssistantViewModel
 import kotlinx.coroutines.launch
+
+object Routes {
+    const val HOME = "home"
+    const val ASSISTANT = "assistant"
+}
 
 @Composable
 fun TechTasteNavHost(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = Routes.HOME
     ) {
-        composable("home") {
-            HomeScreen()
+        composable(Routes.HOME) {
+            HomeScreen(
+                mealsSection = sampleMappedMeals,
+                categories = sampleCategories
+            )
         }
-        composable("assistant") {
+        composable(Routes.ASSISTANT) {
             val viewModel = viewModel<AssistantViewModel>()
             val uiState by viewModel.uiState.collectAsState()
             val scope = rememberCoroutineScope()
