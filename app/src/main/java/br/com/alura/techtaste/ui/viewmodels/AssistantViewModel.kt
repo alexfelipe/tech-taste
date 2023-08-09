@@ -3,6 +3,7 @@ package br.com.alura.techtaste.ui.viewmodels
 import android.util.Log
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import br.com.alura.techtaste.dto.MealsDto
 import br.com.alura.techtaste.models.Message
 import br.com.alura.techtaste.models.MessageError
@@ -17,19 +18,101 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
-private const val SYSTEM_MESSAGE = ""
+private const val JSON = """
+{
+  "meals": [
+    {
+      "name": "Bife Grelhado",
+      "description": "Um suculento bife grelhado acompanhado de legumes frescos.",
+      "price": "35.90"
+    },
+    {
+      "name": "Massa Carbonara",
+      "description": "Massa cozida al dente com molho cremoso de queijo, bacon crocante e pimenta preta.",
+      "price": "28.50"
+    },
+    {
+      "name": "Salmão ao Molho de Maracujá",
+      "description": "Filé de salmão grelhado coberto com molho agridoce de maracujá, servido com arroz selvagem.",
+      "price": "42.75"
+    },
+    {
+      "name": "Pizza Quatro Queijos",
+      "description": "Pizza com uma deliciosa combinação de queijos: mussarela, gorgonzola, parmesão e provolone.",
+      "price": "31.20"
+    },
+    {
+      "name": "Salada Mediterrânea",
+      "description": "Mix de folhas verdes, tomate, pepino, azeitonas, queijo feta e molho de azeite e ervas.",
+      "price": "18.90"
+    },
+    {
+      "name": "Frango Teriyaki",
+      "description": "Peito de frango grelhado com molho teriyaki, acompanhado de arroz branco e legumes salteados.",
+      "price": "29.75"
+    },
+    {
+      "name": "Hambúrguer Clássico",
+      "description": "Hambúrguer suculento com alface, tomate, cebola, queijo cheddar e molho especial, no pão brioche.",
+      "price": "21.50"
+    },
+    {
+      "name": "Tempura de Vegetais",
+      "description": "Seleção crocante de legumes variados em massa de tempura, servido com molho de imersão.",
+      "price": "16.25"
+    },
+    {
+      "name": "Risoto de Cogumelos",
+      "description": "Risoto cremoso preparado com arroz arbóreo e uma variedade de cogumelos frescos.",
+      "price": "27.80"
+    },
+    {
+      "name": "Sundae de Chocolate",
+      "description": "Sorvete de baunilha coberto com calda quente de chocolate, chantilly e amêndoas torradas.",
+      "price": "12.00"
+    }
+  ]
+}
+"""
+
+private const val SYSTEM_MESSAGE = """
+Você será um assistente de App de restaurante. Você receberá solicitações para sugerir refeições e deverá escolher a refeição adequada com base na solicitação.
+Todas as respostas referente às refeições devem seguir o formato de JSON, seguindo esse exemplo:
+
+{
+  "meals": [
+    {
+      "name": "",
+      "description": "",
+      "price": ""
+    },
+    {
+      "name": "",
+      "description": "",
+      "price": ""
+    },
+  ]
+}
+
+Você deve se atentar aos pedidos e apresentar o te pedirem apenas! Abaixo está a base de dados para você decidir o que deve ser sugerido:
+
+$JSON
+"""
+
 
 class AssistantViewModel : ViewModel() {
-
     private val _uiState = MutableStateFlow(AssistantUiState())
+
     private var openAI: OpenAI? = null
 
     @OptIn(BetaOpenAI::class)
     private val chatMessages =
         mutableListOf(ChatMessage(role = ChatRole.System, SYSTEM_MESSAGE))
+
     val uiState = _uiState.asStateFlow()
 
     init {
@@ -50,71 +133,58 @@ class AssistantViewModel : ViewModel() {
         }
         delay(Random.nextLong(500, 1000))
         sendMessage(text)
-//        sendRequestToOpenAi(text)
     }
 
     private fun sendMessage(text: String) {
-        try {
-            if (text.isBlank()) {
-                throw Exception("falha")
-            }
-            val jsonPattern = "\\{.*\\}".toRegex(RegexOption.DOT_MATCHES_ALL)
-            val generatedResponse = generateResponse()
-            val jsonMatch = jsonPattern.find(generatedResponse)
-            jsonMatch?.value?.let { rawJson ->
-                val json = Json { ignoreUnknownKeys = true }
-                val meals = json.decodeFromString<MealsDto>(rawJson).meals
-                val message = generatedResponse.substringBefore(rawJson).trim()
+
+        viewModelScope.launch {
+            try {
+                sendRequestToOpenAi(text)?.let { generatedResponse ->
+                    val jsonPattern = "\\{.*\\}".toRegex(RegexOption.DOT_MATCHES_ALL)
+                    val jsonMatch = jsonPattern.find(generatedResponse)
+                    jsonMatch?.value?.let { rawJson ->
+                        val json = Json { ignoreUnknownKeys = true }
+                        val meals = json.decodeFromString<MealsDto>(rawJson).meals
+                        val message = generatedResponse.substringBefore(rawJson).trim()
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                messages = currentState.messages.dropLast(1) + Message(
+                                    text = generatedResponse,
+                                    isAuthor = false,
+                                    meals = meals
+                                )
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AssistantViewModel", "sendRequestToOpenAi: ", e)
+                val lastMessage = _uiState.value.messages.last()
                 _uiState.update { currentState ->
                     currentState.copy(
-                        messages = currentState.messages.dropLast(1) + Message(
-                            text = message,
-                            isAuthor = false,
-                            meals = meals
+                        messages = currentState.messages.dropLast(1) + lastMessage.copy(
+                            isLoading = false,
+                            error = MessageError("falha ao carregar mensagem", e)
                         )
                     )
                 }
             }
-        } catch (e: Exception) {
-            Log.e("AssistantViewModel", "sendRequestToOpenAi: ", e)
-            val lastMessage = _uiState.value.messages.last()
-            _uiState.update { currentState ->
-                currentState.copy(
-                    messages = currentState.messages.dropLast(1) + lastMessage.copy(
-                        isLoading = false,
-                        error = MessageError("falha ao carregar mensagem", e)
-                    )
-                )
-            }
         }
     }
 
-    private fun generateResponse(): String {
-        return """
-${LoremIpsum(Random.nextInt(10, 30)).values.first()}
-            
-$JSON
-""".trimIndent()
-    }
-
     @OptIn(BetaOpenAI::class)
-    private suspend fun sendRequestToOpenAi(text: String) {
-        openAI?.let { openAi ->
+    private suspend fun sendRequestToOpenAi(text: String): String? {
+        return openAI?.let { openAi ->
             val chatCompletion = openAi
                 .chatCompletion(request = createRequest(text))
             try {
-                val message = chatCompletion.choices
+                chatCompletion.choices
                     .mapNotNull { it.message?.content }
                     .reduce { acc, item ->
                         acc + item
+                    }.also {
+                        Log.i("AssistantViewModel", "sendRequestToOpenAi: $it")
                     }
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        messages = currentState.messages +
-                                Message(text = message, isAuthor = true)
-                    )
-                }
-
             } catch (e: Exception) {
                 Log.e("AssistantViewModel", "sendRequestToOpenAi: ", e)
                 _uiState.update { currentState ->
@@ -123,6 +193,7 @@ $JSON
                                 currentState.messages.last(),
                     )
                 }
+                null
             }
         }
     }
@@ -159,33 +230,7 @@ $JSON
             currentState.copy(messages = _uiState.value.messages.dropLast(1))
         }
     }
-
 }
-
-private const val JSON = """
-{
-  "meals": [
-    {
-      "name": "Hambúrguer Clássico",
-      "description": "Um hambúrguer suculento com queijo, alface e molho especial.",
-      "price": "12.99",
-      "calories": 550
-    },
-    {
-      "name": "Salada de Frango Grelhado",
-      "description": "Uma salada fresca com frango grelhado, vegetais mistos e molho de limão.",
-      "price": "9.99",
-      "calories": 320
-    },
-    {
-      "name": "Massa Carbonara",
-      "description": "Massa cozida al dente com molho de creme de ovo, queijo parmesão e bacon crocante.",
-      "price": "15.50",
-      "calories": 720
-    }
-  ]
-}
-"""
 
 
 
