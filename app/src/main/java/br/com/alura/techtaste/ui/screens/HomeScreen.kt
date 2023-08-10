@@ -1,6 +1,5 @@
 package br.com.alura.techtaste.ui.screens
 
-import android.widget.Space
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -36,9 +34,9 @@ import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.alura.techtaste.extensions.toBrazilianCurrency
-import br.com.alura.techtaste.models.Meal
+import br.com.alura.techtaste.models.Order
 import br.com.alura.techtaste.samples.sampleCategories
-import br.com.alura.techtaste.samples.sampleMeals
+import br.com.alura.techtaste.samples.sampleOrders
 import br.com.alura.techtaste.samples.sampleRandomImage
 import br.com.alura.techtaste.ui.components.MainBanner
 import br.com.alura.techtaste.ui.theme.Gray1
@@ -50,7 +48,7 @@ import kotlin.random.Random
 
 @Composable
 fun HomeScreen(
-    mealsSection: Map<String, List<Meal>>,
+    ordersSection: Map<String, List<Order>>,
     categories: Map<Int, String>,
     modifier: Modifier = Modifier
 ) {
@@ -62,9 +60,9 @@ fun HomeScreen(
         MainBanner()
         Spacer(modifier = Modifier.height(48.dp))
         CategoriesSection(categories)
-        mealsSection.forEach { entry ->
+        ordersSection.forEach { entry ->
             val title = entry.key
-            val meals = entry.value
+            val orders = entry.value
             Column(
                 Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -77,7 +75,7 @@ fun HomeScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    for (meal in meals) {
+                    for (order in orders) {
                         Column(
                             Modifier
                                 .clip(RoundedCornerShape(12.dp))
@@ -100,18 +98,18 @@ fun HomeScreen(
                             )
                             Column(Modifier.padding(16.dp)) {
                                 Text(
-                                    text = meal.name,
+                                    text = order.name,
                                     color = MediumOrange,
                                     fontSize = 16.sp
                                 )
                                 Text(
-                                    text = meal.price.toBrazilianCurrency(),
+                                    text = order.price.toBrazilianCurrency(),
                                     color = Gray3,
                                     fontSize = 14.sp
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = meal.description,
+                                    text = order.description,
                                     color = Gray3,
                                     fontSize = 14.sp
                                 )
@@ -191,9 +189,9 @@ fun HomeScreenPreview() {
             color = MaterialTheme.colorScheme.background
         ) {
             HomeScreen(
-                mealsSection = mapOf(
-                    LoremIpsum(Random.nextInt(1, 5)).values.first() to sampleMeals.shuffled(),
-                    LoremIpsum(Random.nextInt(1, 5)).values.first() to sampleMeals.shuffled()
+                ordersSection = mapOf(
+                    LoremIpsum(Random.nextInt(1, 5)).values.first() to sampleOrders.shuffled(),
+                    LoremIpsum(Random.nextInt(1, 5)).values.first() to sampleOrders.shuffled()
                 ),
                 categories = sampleCategories
             )

@@ -9,7 +9,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import br.com.alura.techtaste.samples.sampleCategories
-import br.com.alura.techtaste.samples.sampleMappedMeals
+import br.com.alura.techtaste.samples.sampleMappedOrders
 import br.com.alura.techtaste.ui.screens.AssistantScreen
 import br.com.alura.techtaste.ui.screens.HomeScreen
 import br.com.alura.techtaste.ui.viewmodels.AssistantViewModel
@@ -28,7 +28,7 @@ fun TechTasteNavHost(navController: NavHostController) {
     ) {
         composable(Routes.HOME) {
             HomeScreen(
-                mealsSection = sampleMappedMeals,
+                ordersSection = sampleMappedOrders,
                 categories = sampleCategories
             )
         }

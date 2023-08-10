@@ -40,9 +40,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 import br.com.alura.techtaste.R
 import br.com.alura.techtaste.models.MessageError
@@ -69,87 +71,82 @@ fun AssistantScreen(
     modifier: Modifier = Modifier,
 ) {
     val messages = uiState.messages
-    var text by remember {
-        mutableStateOf("")
-    }
-    Box(
-        modifier = modifier.fillMaxSize()
-    ) {
-        Column {
-            Row(
+    val text = uiState.text
+    Column(modifier.fillMaxSize()) {
+        Row(
+            Modifier
+                .height(68.dp)
+                .fillMaxWidth()
+                .background(
+                    MediumOrange,
+                    shape = RoundedCornerShape(bottomStart = 24.dp),
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            AsyncImage(
+                R.drawable.app_icon,
+                contentDescription = "ícone do floating action button",
                 Modifier
-                    .height(68.dp)
-                    .fillMaxWidth()
-                    .background(
-                        MediumOrange,
-                        shape = RoundedCornerShape(bottomStart = 24.dp),
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                AsyncImage(
-                    R.drawable.app_icon,
-                    contentDescription = "ícone do floating action button",
-                    Modifier
-                        .padding(start = 24.dp)
-                        .fillMaxHeight()
-                        .width(36.dp),
-                    placeholder = painterResource(id = R.drawable.app_icon)
-                )
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = null,
-                    Modifier
-                        .padding(end = 16.dp)
-                        .clip(CircleShape)
-                        .clickable {
-                            onCloseClick()
-                        },
-                    tint = Gray1,
-                )
-            }
-            LazyColumn(
-                Modifier.padding(bottom = 80.dp)
-            ) {
-                items(messages) { message ->
-                    val alignment = if (message.isAuthor) {
-                        Alignment.CenterEnd
-                    } else {
-                        Alignment.CenterStart
-                    }
-                    BoxWithConstraints(Modifier.fillMaxWidth()) {
-                        Box(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .widthIn(
-                                    max = maxWidth / 1.3f
+                    .padding(start = 24.dp)
+                    .fillMaxHeight()
+                    .width(36.dp),
+                placeholder = painterResource(id = R.drawable.app_icon)
+            )
+            Icon(
+                Icons.Filled.Close,
+                contentDescription = null,
+                Modifier
+                    .padding(end = 16.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        onCloseClick()
+                    },
+                tint = Gray1,
+            )
+        }
+        LazyColumn(
+            Modifier
+                .weight(1f)
+        ) {
+            items(messages) { message ->
+                val alignment = if (message.isAuthor) {
+                    Alignment.CenterEnd
+                } else {
+                    Alignment.CenterStart
+                }
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .widthIn(
+                                max = maxWidth / 1.3f
+                            )
+                            .align(alignment)
+                            .background(
+                                Gray1,
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                    ) {
+                        when {
+                            message.error != null -> {
+                                AssistantErrorMessage(
+                                    message.error,
+                                    onRetryMessageClick = onRetryMessageClick,
+                                    onDeleteMessageClick = onDeleteMessageClick
                                 )
-                                .align(alignment)
-                                .background(
-                                    Gray1,
-                                    shape = RoundedCornerShape(10.dp)
+                            }
+
+                            message.isLoading -> {
+                                CircularProgressIndicator(
+                                    Modifier
+                                        .padding(8.dp)
+                                        .align(Alignment.Center)
                                 )
-                        ) {
-                            when {
-                                message.error != null -> {
-                                    AssistantErrorMessage(
-                                        message.error,
-                                        onRetryMessageClick = onRetryMessageClick,
-                                        onDeleteMessageClick = onDeleteMessageClick
-                                    )
-                                }
+                            }
 
-                                message.isLoading -> {
-                                    CircularProgressIndicator(
-                                        Modifier
-                                            .padding(8.dp)
-                                            .align(Alignment.Center)
-                                    )
-                                }
-
-                                else -> {
-                                    AssistantMessage(message)
-                                }
+                            else -> {
+                                AssistantMessage(message)
                             }
                         }
                     }
@@ -158,9 +155,9 @@ fun AssistantScreen(
         }
         Row(
             Modifier
-                .heightIn(80.dp)
+                .heightIn(min = 80.dp)
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter),
+                .background(MaterialTheme.colorScheme.background),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val keyboardController = LocalSoftwareKeyboardController.current
@@ -168,7 +165,7 @@ fun AssistantScreen(
             OutlinedTextField(
                 value = text,
                 onValueChange = {
-                    text = it
+                    uiState.onTextChange(it)
                 },
                 Modifier
                     .padding(
@@ -207,7 +204,7 @@ fun AssistantScreen(
                                 keyboardController?.hide()
                                 delay(100)
                                 onSendClick(text)
-                                text = ""
+                                uiState.onClearText()
                             }
                         },
                     tint = Gray1
@@ -228,7 +225,7 @@ fun AssistantScreenPreview() {
         ) {
             Box {
                 AssistantScreen(
-                    AssistantUiState(sampleMessages),
+                    AssistantUiState(messages = sampleMessages),
                     onCloseClick = {
                     },
                     onSendClick = {},
@@ -250,9 +247,11 @@ fun AssistantScreenWithLoadingMessagePreview() {
         ) {
             Box {
                 AssistantScreen(
-                    AssistantUiState(sampleMessages.subList(0, 3).mapIndexed { index, message ->
-                        message.copy(isLoading = index % 2 != 0)
-                    }),
+
+                    AssistantUiState(
+                        messages = sampleMessages.subList(0, 3).mapIndexed { index, message ->
+                            message.copy(isLoading = index % 2 != 0)
+                        }),
                     onCloseClick = {
                     },
                     onSendClick = {},
@@ -275,16 +274,43 @@ fun AssistantScreenWithErrorMessagePreview() {
         ) {
             Box {
                 AssistantScreen(
-                    AssistantUiState(sampleMessages.subList(0, 3).mapIndexed { index, message ->
-                        message.copy(
-                            error = if (index % 2 != 0) MessageError(
-                                "falha ao carregar mensagem",
-                                Exception()
-                            ) else {
-                                null
-                            }
-                        )
-                    }),
+                    AssistantUiState(
+                        messages = sampleMessages.subList(0, 3).mapIndexed { index, message ->
+                            message.copy(
+                                error = if (index % 2 != 0) MessageError(
+                                    "falha ao carregar mensagem",
+                                    Exception()
+                                ) else {
+                                    null
+                                }
+                            )
+                        }),
+                    onCloseClick = {
+                    },
+                    onSendClick = {},
+                    onRetryMessageClick = {},
+                    onDeleteMessageClick = {}
+                )
+            }
+        }
+    }
+
+}
+
+@Preview
+@Composable
+fun AssistantScreenWithTextOnTextFieldPreview() {
+    TechTasteTheme {
+        Surface(
+            Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Box {
+                AssistantScreen(
+                    AssistantUiState(
+                        text = LoremIpsum(30).values.first(),
+                        messages = sampleMessages
+                    ),
                     onCloseClick = {
                     },
                     onSendClick = {},

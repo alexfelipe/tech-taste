@@ -29,11 +29,11 @@ import br.com.alura.techtaste.extensions.toBrazilianCurrency
 import br.com.alura.techtaste.models.Message
 import br.com.alura.techtaste.samples.sampleMessages
 import br.com.alura.techtaste.samples.sampleRandomImage
+import br.com.alura.techtaste.ui.theme.Gray1
 import br.com.alura.techtaste.ui.theme.LightOrange
 import br.com.alura.techtaste.ui.theme.MediumOrange
 import br.com.alura.techtaste.ui.theme.TechTasteTheme
 import coil.compose.AsyncImage
-import kotlin.random.Random
 
 @Composable
 fun AssistantMessage(
@@ -47,8 +47,8 @@ fun AssistantMessage(
             Modifier.padding(8.dp),
             color = LightOrange
         )
-        if (message.meals.isNotEmpty()) {
-            message.meals.forEach { meal ->
+        if (message.orders.isNotEmpty()) {
+            message.orders.forEach { order ->
                 Column(Modifier.padding(horizontal = 8.dp)) {
                     Row(
                         Modifier.fillMaxWidth(),
@@ -65,7 +65,7 @@ fun AssistantMessage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             AsyncImage(
-                                sampleRandomImage, contentDescription = null,
+                                order.image, contentDescription = null,
                                 Modifier
                                     .size(80.dp, 70.dp)
                                     .background(
@@ -82,14 +82,14 @@ fun AssistantMessage(
                                 contentScale = ContentScale.Crop
                             )
                             Text(
-                                text = meal.name,
+                                text = order.name,
                                 color = MediumOrange,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Text(text = meal.price.toBrazilianCurrency())
+                        Text(text = order.price.toBrazilianCurrency())
                     }
                     Spacer(
                         modifier = Modifier
@@ -108,7 +108,7 @@ fun AssistantMessage(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "Total:")
-                val total = message.meals.sumOf { it.price }
+                val total = message.orders.sumOf { it.price }
                 Text(
                     text = total.toBrazilianCurrency(),
                     fontSize = 22.sp
@@ -121,7 +121,7 @@ fun AssistantMessage(
                     .fillMaxWidth()
 
             ) {
-                Text(text = "Pedir")
+                Text(text = "Pedir", color = Gray1)
             }
         }
     }
@@ -132,17 +132,17 @@ fun AssistantMessage(
 fun AssistantMessagePreview() {
     TechTasteTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
-            AssistantMessage(message = sampleMessages.first { it.meals.isEmpty() })
+            AssistantMessage(message = sampleMessages.first { it.orders.isEmpty() })
         }
     }
 }
 
 @Preview
 @Composable
-fun AssistantMessageWithMealsPreview() {
+fun AssistantMessageWithOrdersPreview() {
     TechTasteTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
-            AssistantMessage(message = sampleMessages.first { it.meals.isNotEmpty() })
+            AssistantMessage(message = sampleMessages.first { it.orders.isNotEmpty() })
         }
     }
 }

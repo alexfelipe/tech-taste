@@ -5,9 +5,10 @@ import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 @Serializable
-class Meal(
+data class Order(
     val name: String,
     @Serializable(BigDecimalSerializer::class)
     val price: BigDecimal,
-    val description: String
+    val description: String,
+    val image: String? = null
 )
