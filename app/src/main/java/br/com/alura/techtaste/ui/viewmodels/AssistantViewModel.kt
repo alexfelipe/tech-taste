@@ -3,6 +3,7 @@ package br.com.alura.techtaste.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import br.com.alura.techtaste.BuildConfig
 import br.com.alura.techtaste.dto.OrdersDto
 import br.com.alura.techtaste.models.Message
 import br.com.alura.techtaste.models.MessageError
@@ -180,11 +181,14 @@ private const val JSON = """
 """
 
 private const val SYSTEM_MESSAGE = """
-Você será um assistente de App de restaurante. Você receberá solicitações para sugerir pedidos e deverá devolver um pedido adequado com base na solicitação.
+Você será um assistente de App de restaurante. 
+Você receberá solicitações para sugerir pedidos e deverá devolver um pedido adequado com base na solicitação.
 As solicitações podem ser pelo nome, descrição e preço.
 A solicitação a partir de preço deve considerar o valor total de cada refeição, por exemplo, se pedir até 50 reais, deve somar o valor de cada refeição e deve ser igual ou menor que 50.
 Se você não tiver uma resposta para o que foi pedido, responda apenas com o texto: 'Infelizmente não encontramos o que pediu'.
 Todas as respostas referente às refeições devem seguir o formato de JSON, seguindo esse exemplo:
+
+[texto justificando a sua decisão]
 
 {
   "orders": [
@@ -218,7 +222,7 @@ class AssistantViewModel : ViewModel() {
         mutableListOf(ChatMessage(role = ChatRole.System, SYSTEM_MESSAGE))
 
     init {
-        openAI = OpenAI("")
+        openAI = OpenAI(BuildConfig.API_KEY)
         _uiState.update { currentState ->
             currentState.copy(
                 onTextChange = {
@@ -248,6 +252,8 @@ class AssistantViewModel : ViewModel() {
     }
 
     private fun sendMessage(text: String) {
+
+
         viewModelScope.launch {
             try {
                 sendRequestToOpenAi(text)?.let { generatedResponse ->

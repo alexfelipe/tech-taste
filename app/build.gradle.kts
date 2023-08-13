@@ -1,7 +1,17 @@
+
+import org.jetbrains.kotlin.konan.properties.Properties
+import java.io.FileInputStream
+import java.lang.System.load
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     kotlin("plugin.serialization") version "1.9.0"
+}
+
+val file = rootProject.file("apikey.properties")
+val apiKeyProperties = Properties().apply {
+    this.load(FileInputStream(file))
 }
 
 android {
@@ -19,6 +29,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField(
+            "String",
+            "API_KEY",
+            apiKeyProperties["API_KEY"] as String
+        )
     }
 
     buildTypes {
@@ -31,14 +47,15 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_19
-        targetCompatibility = JavaVersion.VERSION_19
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "19"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
