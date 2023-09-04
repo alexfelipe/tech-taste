@@ -40,12 +40,8 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
-
         lifecycleScope.launch {
-
-            OpenAI("")
+            OpenAI(BuildConfig.API_KEY)
                 .chatCompletion(
                     request = ChatCompletionRequest(
                         model = ModelId("gpt-3.5-turbo"),
