@@ -66,7 +66,7 @@ class AssistantViewModel : ViewModel() {
                 ).choices
                     .mapNotNull {
                         it.message.content
-                    }.joinToString()
+                    }.joinToString(separator = "")
                 val orders = emptyList<Order>()
                 _uiState.update { currentState ->
                     currentState.copy(

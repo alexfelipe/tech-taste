@@ -12,6 +12,8 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
+        val words = listOf<String>("alex, ", "felipe, ", "dsadh, dasjkdh aksd,, ")
+        println(words.joinToString(separator = ""))
         assertEquals(4, 2 + 2)
     }
 }
