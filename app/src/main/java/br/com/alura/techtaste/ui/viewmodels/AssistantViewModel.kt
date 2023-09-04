@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.alura.techtaste.BuildConfig
 import br.com.alura.techtaste.models.Message
+import br.com.alura.techtaste.models.Order
 import br.com.alura.techtaste.samples.sampleOrders
 import br.com.alura.techtaste.ui.states.AssistantUiState
 import com.aallam.openai.api.chat.ChatCompletionRequest
@@ -40,9 +41,15 @@ class AssistantViewModel : ViewModel() {
     }
 
     fun send(text: String) {
+        _uiState.update {
+            it.copy(
+                messages = it.messages +
+                        Message(text, isAuthor = true)
+            )
+        }
         viewModelScope.launch {
             openAI?.let { openAI ->
-                openAI.chatCompletion(
+                val message = openAI.chatCompletion(
                     request = ChatCompletionRequest(
                         model = ModelId("gpt-3.5-turbo"),
                         messages = listOf(
@@ -52,33 +59,25 @@ class AssistantViewModel : ViewModel() {
                             ),
                             ChatMessage(
                                 role = ChatRole.User,
-                                content = "me sugira uma comida light para hoje"
+                                content = text
                             )
                         )
                     )
-                ).let { chatCompletion ->
-                    chatCompletion.choices.forEach {
-                        Log.i("MainActivity", "onCreate: ${it.message}")
-                    }
+                ).choices
+                    .mapNotNull {
+                        it.message.content
+                    }.joinToString()
+                val orders = emptyList<Order>()
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        messages = _uiState.value.messages + Message(
+                            text = message,
+                            isAuthor = false,
+                            orders = orders,
+                        )
+                    )
                 }
             }
-        }
-        _uiState.update {
-            it.copy(
-                messages = it.messages +
-                        Message(text, isAuthor = true)
-            )
-        }
-        val message = LoremIpsum(Random.nextInt(10, 50)).values.first()
-        val orders = sampleOrders.shuffled().subList(0, 2)
-        _uiState.update { currentState ->
-            currentState.copy(
-                messages = _uiState.value.messages + Message(
-                    text = message,
-                    isAuthor = false,
-                    orders = orders,
-                )
-            )
         }
     }
 
