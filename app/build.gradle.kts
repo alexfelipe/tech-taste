@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "br.com.alura.techtaste"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "br.com.alura.techtaste"
@@ -30,11 +30,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_19
-        targetCompatibility = JavaVersion.VERSION_19
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "19"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -50,10 +50,15 @@ android {
 }
 
 dependencies {
+    implementation(platform("com.aallam.openai:openai-client-bom:3.4.0"))
+    implementation("com.aallam.openai:openai-client")
+    runtimeOnly("io.ktor:ktor-client-okhttp")
+
+
     val composeBom = platform("androidx.compose:compose-bom:2023.06.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
-    val navVersion = "2.6.0"
+    val navVersion = "2.7.1"
 
     implementation("androidx.navigation:navigation-compose:$navVersion")
     implementation("io.coil-kt:coil-compose:2.4.0")
