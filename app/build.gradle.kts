@@ -5,6 +5,7 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 val file = rootProject.file("apikey.properties")
@@ -76,6 +77,7 @@ dependencies {
     androidTestImplementation(composeBom)
     val navVersion = "2.7.1"
 
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("androidx.navigation:navigation-compose:$navVersion")
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("androidx.core:core-ktx:1.10.1")

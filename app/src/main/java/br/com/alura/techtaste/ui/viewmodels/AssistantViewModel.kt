@@ -3,8 +3,10 @@ package br.com.alura.techtaste.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.alura.techtaste.BuildConfig
+import br.com.alura.techtaste.dtos.OrderResponse
+import br.com.alura.techtaste.dtos.toOrder
 import br.com.alura.techtaste.models.Message
-import br.com.alura.techtaste.models.Order
+import br.com.alura.techtaste.samples.sampleRandomImage
 import br.com.alura.techtaste.ui.states.AssistantUiState
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
@@ -15,10 +17,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 private const val JSON = """
 {
-  "order": [
+  "orders": [
     {
       "name": "Bife Grelhado",
       "description": "Um suculento bife grelhado acompanhado de legumes frescos.",
@@ -180,13 +183,32 @@ As solicitações podem ser pelo nome, descrição e preço.
 A solicitação a partir de preço deve considerar o valor total de cada refeição, por exemplo, se pedir até 50 reais, deve somar o valor de cada refeição e deve ser igual ou menor que 50.
 Se você não tiver uma resposta para o que foi pedido, responda apenas com o texto: 'Infelizmente não encontramos o que pediu'.
 
-Abaixo está a base de dados para você decidir o que deve ser sugerido:
+Todas respostas devem conter o seguinte padrão:
+
+[texto explicando a decisão de maneira resumida]
+
+[JSON com a lista de pedidos]
+
+A lista de pedidos deve seguir o seguinte formato:
+
+{
+  "orders": [
+    {
+      "name": "",
+      "description": "",
+      "price": ""
+    },
+    {
+      "name": "",
+      "description": "",
+      "price": ""
+    },
+  ]
+}
+
+Você deve se atentar aos pedidos e apresentar o te pedirem apenas! Abaixo está a base de dados para você decidir o que deve ser sugerido:
 
 $JSON
-"""
-
-private const val RESPONSE_TEXT = """
-Você deve responder com um texto justificando a resposta de forma resumida, e também, abaixo, o JSON mostrando a lista de pedidos.
 """
 
 class AssistantViewModel : ViewModel() {
@@ -218,17 +240,13 @@ class AssistantViewModel : ViewModel() {
         }
         viewModelScope.launch {
             openAI?.let { openAI ->
-                val message = openAI.chatCompletion(
+                val openAiResponse = openAI.chatCompletion(
                     request = ChatCompletionRequest(
                         model = ModelId("gpt-3.5-turbo"),
                         messages = listOf(
                             ChatMessage(
                                 role = ChatRole.System,
                                 content = SYSTEM_TEXT
-                            ),
-                            ChatMessage(
-                                role = ChatRole.System,
-                                content = RESPONSE_TEXT
                             ),
                             ChatMessage(
                                 role = ChatRole.User,
@@ -240,7 +258,18 @@ class AssistantViewModel : ViewModel() {
                     .mapNotNull {
                         it.message.content
                     }.joinToString(separator = "")
-                val orders = emptyList<Order>()
+                val jsonPattern = "\\{.*\\}".toRegex(RegexOption.DOT_MATCHES_ALL)
+                val jsonMatch = jsonPattern.find(openAiResponse)
+                val (message, orders) = jsonMatch?.value?.let { rawJson ->
+                    val json = Json { ignoreUnknownKeys = true }
+                    val orders = json.decodeFromString<OrderResponse>(rawJson)
+                        .orders
+                        .map { dto ->
+                            dto.toOrder(image = sampleRandomImage)
+                        }
+                    val message = openAiResponse.substringBefore(rawJson)
+                    Pair(message, orders)
+                } ?: Pair(openAiResponse, emptyList())
                 _uiState.update { currentState ->
                     currentState.copy(
                         messages = _uiState.value.messages + Message(
@@ -250,6 +279,7 @@ class AssistantViewModel : ViewModel() {
                         )
                     )
                 }
+
             }
         }
     }
