@@ -185,12 +185,8 @@ Abaixo está a base de dados para você decidir o que deve ser sugerido:
 $JSON
 """
 
-private const val FUNCTION_TEXT = """
-A resposta deve ser sempre no seguinte formato:
-
-[motivo da resposta]
-
-[lista em JSON com os pedidos escolhidos]
+private const val RESPONSE_TEXT = """
+Você deve responder com um texto justificando a resposta de forma resumida, e também, abaixo, o JSON mostrando a lista de pedidos.
 """
 
 class AssistantViewModel : ViewModel() {
@@ -232,7 +228,7 @@ class AssistantViewModel : ViewModel() {
                             ),
                             ChatMessage(
                                 role = ChatRole.System,
-                                content = FUNCTION_TEXT
+                                content = RESPONSE_TEXT
                             ),
                             ChatMessage(
                                 role = ChatRole.User,
