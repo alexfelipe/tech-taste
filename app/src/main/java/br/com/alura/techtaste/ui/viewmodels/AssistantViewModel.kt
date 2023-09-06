@@ -47,15 +47,21 @@ class AssistantViewModel : ViewModel() {
         _uiState.update {
             it.copy(
                 messages = it.messages +
-                        Message(text, isAuthor = true)
+                        Message(text, isAuthor = true) +
+                        Message("", isAuthor = false, isLoading = true)
             )
         }
         viewModelScope.launch {
             val (message, orders) = ordersOpenAiClient?.getMessageAndOrders(text)
                 ?: Pair("Infelizmente não encontramos o que pediu", emptyList())
+            val messages = _uiState.value.messages.let { messages ->
+                if(messages.last().isLoading && !messages.last().isAuthor) {
+                    messages.dropLast(1)
+                } else messages
+            }
             _uiState.update { currentState ->
                 currentState.copy(
-                    messages = _uiState.value.messages + Message(
+                    messages = messages + Message(
                         text = message,
                         isAuthor = false,
                         orders = orders,

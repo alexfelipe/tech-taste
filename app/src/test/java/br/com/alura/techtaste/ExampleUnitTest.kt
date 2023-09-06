@@ -1,5 +1,9 @@
 package br.com.alura.techtaste
 
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 import org.junit.Assert.*
@@ -11,7 +15,7 @@ import org.junit.Assert.*
  */
 class ExampleUnitTest {
     @Test
-    fun addition_isCorrect() {
+    fun addition_isCorrect() = runBlocking {
         val words = listOf<String>("alex, ", "felipe, ", "dsadh, dasjkdh aksd,, ")
         println(words.joinToString(separator = ""))
         assertEquals(4, 2 + 2)

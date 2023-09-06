@@ -8,4 +8,3 @@ data class AssistantUiState(
     val onCleanText: () -> Unit = {},
     val messages: List<Message> = emptyList(),
 )
-
