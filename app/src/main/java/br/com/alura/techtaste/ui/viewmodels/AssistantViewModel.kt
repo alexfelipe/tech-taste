@@ -1,5 +1,6 @@
 package br.com.alura.techtaste.ui.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.alura.techtaste.BuildConfig
@@ -29,7 +30,8 @@ class AssistantViewModel : ViewModel() {
 
     init {
         ordersOpenAiClient = OrdersOpenAiClient(
-            OpenAI(BuildConfig.API_KEY)
+            OpenAI("dhjasdhkasjhr")
+//            OpenAI(BuildConfig.API_KEY)
         )
         _uiState.update { currentState ->
             currentState.copy(
@@ -52,22 +54,36 @@ class AssistantViewModel : ViewModel() {
             )
         }
         viewModelScope.launch {
-            val (message, orders) = ordersOpenAiClient?.getMessageAndOrders(text)
-                ?: Pair("Infelizmente não encontramos o que pediu", emptyList())
-            val messages = _uiState.value.messages.let { messages ->
-                if(messages.last().isLoading && !messages.last().isAuthor) {
-                    messages.dropLast(1)
-                } else messages
-            }
-            _uiState.update { currentState ->
-                currentState.copy(
-                    messages = messages + Message(
-                        text = message,
-                        isAuthor = false,
-                        orders = orders,
-                    )
-                )
-            }
+                try {
+                    val (message, orders) = ordersOpenAiClient?.getMessageAndOrders(text)
+                        ?: Pair("Infelizmente não encontramos o que pediu", emptyList())
+                    val messages = _uiState.value.messages.let { messages ->
+                        if(messages.last().isLoading && !messages.last().isAuthor) {
+                            messages.dropLast(1)
+                        } else messages
+                    }
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            messages = messages + Message(
+                                text = message,
+                                isAuthor = false,
+                                orders = orders,
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e("AssistantViewModel", "send: ", e)
+                    val messages = _uiState.value.messages.let { messages ->
+                        if(messages.last().isLoading && !messages.last().isAuthor) {
+                            messages.dropLast(1)
+                        } else messages
+                    }
+                    _uiState.update {currentState ->
+                        currentState.copy(
+                            messages = messages
+                        )
+                    }
+                }
         }
     }
 
