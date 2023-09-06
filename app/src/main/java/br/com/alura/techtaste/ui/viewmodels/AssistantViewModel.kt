@@ -3,23 +3,15 @@ package br.com.alura.techtaste.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import br.com.alura.techtaste.BuildConfig
-import br.com.alura.techtaste.dtos.OrderResponse
-import br.com.alura.techtaste.dtos.toOrder
 import br.com.alura.techtaste.models.Message
+import br.com.alura.techtaste.models.MessageError
 import br.com.alura.techtaste.openai.OrdersOpenAiClient
-import br.com.alura.techtaste.samples.sampleRandomImage
 import br.com.alura.techtaste.ui.states.AssistantUiState
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 
 
 class AssistantViewModel : ViewModel() {
@@ -54,37 +46,65 @@ class AssistantViewModel : ViewModel() {
             )
         }
         viewModelScope.launch {
-                try {
-                    val (message, orders) = ordersOpenAiClient?.getMessageAndOrders(text)
-                        ?: Pair("Infelizmente não encontramos o que pediu", emptyList())
-                    val messages = _uiState.value.messages.let { messages ->
-                        if(messages.last().isLoading && !messages.last().isAuthor) {
-                            messages.dropLast(1)
-                        } else messages
-                    }
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            messages = messages + Message(
-                                text = message,
-                                isAuthor = false,
-                                orders = orders,
-                            )
-                        )
-                    }
-                } catch (e: Exception) {
-                    Log.e("AssistantViewModel", "send: ", e)
-                    val messages = _uiState.value.messages.let { messages ->
-                        if(messages.last().isLoading && !messages.last().isAuthor) {
-                            messages.dropLast(1)
-                        } else messages
-                    }
-                    _uiState.update {currentState ->
-                        currentState.copy(
-                            messages = messages
-                        )
-                    }
+            try {
+                val (message, orders) = ordersOpenAiClient?.getMessageAndOrders(text)
+                    ?: Pair("Infelizmente não encontramos o que pediu", emptyList())
+                val messages = _uiState.value.messages.let { messages ->
+                    if (messages.last().isLoading && !messages.last().isAuthor) {
+                        messages.dropLast(1)
+                    } else messages
                 }
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        messages = messages + Message(
+                            text = message,
+                            isAuthor = false,
+                            orders = orders,
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("AssistantViewModel", "send: ", e)
+                val messages = _uiState.value.messages.let { messages ->
+                    if (messages.last().isLoading && !messages.last().isAuthor) {
+                        messages.dropLast(1)
+                    } else messages
+                }
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        messages = messages +
+                                Message(
+                                    "",
+                                    isAuthor = false,
+                                    isLoading = false,
+                                    error = MessageError("Falha ao carregar mensagem", e)
+                                )
+                    )
+                }
+            }
         }
+    }
+
+    fun deleteLastMessageError() {
+        _uiState.value.messages.let { messages ->
+            val lastMessage = messages.last()
+            if (!lastMessage.isAuthor && lastMessage.error != null) {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        messages = messages.dropLast(1)
+                    )
+                }
+            }
+        }
+    }
+
+    fun retry() {
+        deleteLastMessageError()
+        val lastMessage = _uiState.value.messages.last().text
+        _uiState.update { currentState ->
+            currentState.copy(messages = _uiState.value.messages.dropLast(1))
+        }
+        send(lastMessage)
     }
 
 }

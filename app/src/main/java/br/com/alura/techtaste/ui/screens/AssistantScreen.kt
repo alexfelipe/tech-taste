@@ -31,11 +31,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -47,6 +43,7 @@ import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 import br.com.alura.techtaste.R
 import br.com.alura.techtaste.samples.sampleMessages
+import br.com.alura.techtaste.ui.components.AssistantErrorMessage
 import br.com.alura.techtaste.ui.components.AssistantMessage
 import br.com.alura.techtaste.ui.states.AssistantUiState
 import br.com.alura.techtaste.ui.theme.Gray1
@@ -63,6 +60,8 @@ fun AssistantScreen(
     uiState: AssistantUiState,
     onCloseClick: () -> Unit,
     onSendClick: (String) -> Unit,
+    onRetryMessageClick: () -> Unit,
+    onDeleteMessageClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val messages = uiState.messages
@@ -124,11 +123,19 @@ fun AssistantScreen(
                             )
                     ) {
                         when {
+                            message.error != null -> {
+                                AssistantErrorMessage(
+                                    error = message.error,
+                                    onRetryMessageClick = onRetryMessageClick,
+                                    onDeleteMessageClick = onDeleteMessageClick
+                                )
+                            }
                             message.isLoading -> {
                                 Box {
                                     CircularProgressIndicator(Modifier.padding(8.dp))
                                 }
                             }
+
                             else -> AssistantMessage(message)
                         }
 
@@ -211,6 +218,8 @@ fun AssistantScreenPreview() {
                     onCloseClick = {
                     },
                     onSendClick = {},
+                    onRetryMessageClick = {},
+                    onDeleteMessageClick = {}
                 )
             }
         }
@@ -234,6 +243,10 @@ fun AssistantScreenWithTextInTextFieldPreview() {
                     onCloseClick = {
                     },
                     onSendClick = {},
+                    onRetryMessageClick = {
+
+                    },
+                    onDeleteMessageClick = {}
                 )
             }
         }
